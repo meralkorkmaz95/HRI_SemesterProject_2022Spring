@@ -17,6 +17,9 @@
 
 from controller import Robot, Keyboard, Motion
 import random
+from pynput import keyboard
+import time 
+import socket 
 
 class Nao (Robot):
     PHALANX_MAX = 8
@@ -178,7 +181,7 @@ class Nao (Robot):
                 self.lphalanx[i].setPosition(clampedAngle)
 
     def printHelp(self):
-        print('----------nao_demo_pythonIIIII----------')
+        print('----------nao_demo_python----------')
         print('Use the keyboard to control the robots (one at a time)')
         print('(The 3D window need to be focused)')
         print('[Up][Down]: move one step forward/backwards')
@@ -196,18 +199,6 @@ class Nao (Robot):
         print('[7][8][9]: change all leds RGB color')
         print('[0]: turn all leds off')
         print('[H]: print this help message')
-
-    def compareNum(self, guess, n):
-        if guess < n: 
-            print("UP")
-            return 1 
-        elif guess > n: 
-            print("DOWN")
-            return -1
-        elif guess == n: 
-            print("WIN")
-            return 0 
-    
 
     def findAndEnableDevices(self):
         # get the time step of the current world.
@@ -302,69 +293,68 @@ class Nao (Robot):
         self.printHelp()
 
     def run(self):
-        n = random.randint(0,10)
-        print(n)
+        n = random.randint(0,9)
         self.handWave.setLoop(True)
         self.handWave.play()
 
         # until a key is pressed
         key = -1
-        stat = 2
         while robot.step(self.timeStep) != -1:
             key = self.keyboard.getKey()
             if key > 0:
-               break
+                break
 
         self.handWave.setLoop(False)
-
+        turn = "child"
+        guess = 5
         while True:
-            key = self.keyboard.getKey()
-            
-            if key == ord('0') : 
-                stat = self.compareNum(0, n)
-            elif key == ord('1') : 
-                stat = self.compareNum(1, n)
-            elif key == ord('2') : 
-                stat = self.compareNum(2, n)
-            elif key == ord('3') : 
-                stat = self.compareNum(3, n)
-            elif key == ord('4') : 
-                stat = self.compareNum(4, n)
-            elif key == ord('5') : 
-                stat = self.compareNum(5, n)
-            elif key == ord('6') : 
-                stat = self.compareNum(6, n)
-            elif key == ord('7') : 
-                stat = self.compareNum(7, n)
-            elif key == ord('8') : 
-                stat = self.compareNum(8, n)
-            elif key == ord('9') : 
-                stat = self.compareNum(9, n)                
-                
-            if stat == -1: 
-                #play go up dance
-                self.sideStepLeft.play()
-            if stat == 0: 
-                #play win dance and exit sim
-                self.forwards.play()
-            if stat == 1: 
-                #play go down dance
-                self.sideStepRight.play()
-                                
-            if key == Keyboard.LEFT:
-                self.startMotion(self.sideStepLeft)
-            elif key == Keyboard.RIGHT:
-                self.startMotion(self.sideStepRight)
-            elif key == Keyboard.UP:
-                self.startMotion(self.forwards)
-            elif key == Keyboard.DOWN:
-                self.startMotion(self.backwards)
-            elif key == Keyboard.LEFT | Keyboard.SHIFT:
-                self.startMotion(self.turnLeft60)
-            elif key == Keyboard.RIGHT | Keyboard.SHIFT:
-                self.startMotion(self.turnRight60)
+            if turn == "child" and guess == 5:
+                HOST = "127.0.0.1"  # The server's hostname or IP address
+                PORT = 65432  # The port used by the server
+    
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.connect((HOST, PORT))
+                    s.sendall(b"Hello, world")
+                    while True:
+                        try: 
+                            data = s.recv(1024)
+                            print(data)
+                            break
+                        except: 
+                            print("Nothing yet")
+                        
+                        
+                data = data.decode("utf-8") 
+                print("Received " + data)
+                guess = data
+                turn = "nao"
+                guess = 6 
+    
 
-
+            if turn == "nao": 
+                if guess < n: 
+                    #play go up dance
+                    print("PLaying Left")
+                    self.sideStepLeft.play()
+                    turn = "child" 
+                    # self.sideStepLeft.play()
+                if guess == n: 
+                    #play win dance and exit sim
+                    #self.forwards.play()
+                    print("PLaying win")
+                    self.handWave.play()
+                    self.turnRight60.play()
+                    turn = "child" 
+                    # self.forwards.play()
+                    return
+                if guess > n: 
+                    #play go down dance
+                    print("PLaying right4")
+                    self.sideStepRight.play()
+                    turn = "child" 
+                    # self.sideStepRight.play()
+            else: 
+                print("done")
             if robot.step(self.timeStep) == -1:
                 break
 
