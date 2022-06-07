@@ -15,11 +15,12 @@
 """Example of Python controller for Nao robot.
    This demonstrates how to access sensors and actuators"""
 
-from controller import Robot, Keyboard, Motion
+from controller import Robot, Keyboard, Motion, Speaker
 import random
 from pynput import keyboard
 import time 
-import socket 
+import socket
+import json
 
 class Nao (Robot):
     PHALANX_MAX = 8
@@ -293,6 +294,12 @@ class Nao (Robot):
         self.printHelp()
 
     def run(self):
+        HOST = "127.0.0.1"  # The server's hostname or IP address
+        PORT = 65432  # The port used by the server
+        
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect((HOST, PORT))
+        
         n = random.randint(0,9)
         print("Num is: " + str(n))
         self.handWave.setLoop(True)
@@ -309,25 +316,20 @@ class Nao (Robot):
         turn = "child"
         while True:
             if turn == "child":
-                HOST = "127.0.0.1"  # The server's hostname or IP address
-                PORT = 65432  # The port used by the server
-                
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.connect((HOST, PORT))
-                    s.sendall(b"Hello, world")
-                    print("here1")
-                    while True:
-                        try: 
-                            data = s.recv(1024)
-                            print(data)
-                            break
-                        except: 
-                            print("Nothing yet")
+                message = {"stage":"guess", "goal":n}
+                msg = json.dumps(message)
+                s.sendall(bytes(msg,encoding="utf-8"))
+                while True:
+                    try: 
+                        data = s.recv(1024)
+                        print(data)
+                        break
+                    except: 
+                        print("Nothing yet")
                 data = data.decode("utf-8") 
                 print("Received " + data)
                 guess = int(data)
                 turn = "nao"
-                print("here2")     
 
             if turn == "nao": 
                 if guess < n: 
