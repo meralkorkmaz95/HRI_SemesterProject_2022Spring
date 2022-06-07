@@ -294,6 +294,7 @@ class Nao (Robot):
 
     def run(self):
         n = random.randint(0,9)
+        print("Num is: " + str(n))
         self.handWave.setLoop(True)
         self.handWave.play()
 
@@ -306,15 +307,15 @@ class Nao (Robot):
 
         self.handWave.setLoop(False)
         turn = "child"
-        guess = 5
         while True:
-            if turn == "child" and guess == 5:
+            if turn == "child":
                 HOST = "127.0.0.1"  # The server's hostname or IP address
                 PORT = 65432  # The port used by the server
-    
+                
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     s.connect((HOST, PORT))
                     s.sendall(b"Hello, world")
+                    print("here1")
                     while True:
                         try: 
                             data = s.recv(1024)
@@ -322,39 +323,38 @@ class Nao (Robot):
                             break
                         except: 
                             print("Nothing yet")
-                        
-                        
                 data = data.decode("utf-8") 
                 print("Received " + data)
-                guess = data
+                guess = int(data)
                 turn = "nao"
-                guess = 6 
-    
+                print("here2")     
 
             if turn == "nao": 
                 if guess < n: 
-                    #play go up dance
+                    turn = "movement" 
+                    motion = "left"
                     print("PLaying Left")
                     self.sideStepLeft.play()
-                    turn = "child" 
-                    # self.sideStepLeft.play()
                 if guess == n: 
-                    #play win dance and exit sim
-                    #self.forwards.play()
-                    print("PLaying win")
-                    self.handWave.play()
-                    self.turnRight60.play()
-                    turn = "child" 
-                    # self.forwards.play()
-                    return
+                    turn = "movement" 
+                    motion = "win"
+                    print("PLaying Win")
+                    self.forwards.play()
                 if guess > n: 
-                    #play go down dance
-                    print("PLaying right4")
+                    turn = "movement"
+                    motion = "right"
+                    print("PLaying Right")
                     self.sideStepRight.play()
+
+            if turn == "movement":
+                if motion == "left" and self.sideStepLeft.isOver():
                     turn = "child" 
-                    # self.sideStepRight.play()
-            else: 
-                print("done")
+                if motion == "right" and self.sideStepRight.isOver():
+                    turn = "child" 
+                if motion == "win" and self.forwards.isOver():
+                    turn = "child" 
+                    return
+                                    
             if robot.step(self.timeStep) == -1:
                 break
 
