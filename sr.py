@@ -6,6 +6,8 @@ import socket
 import speech_recognition as sr
 import pyttsx3
 import json 
+from playsound import playsound
+import time 
 
 HOST = "127.0.0.1"  
 PORT = 65432  
@@ -18,7 +20,10 @@ s.bind((HOST, PORT))
 s.listen()
 conn, addr = s.accept()
 print(f"Connected by {addr}")
-
+engine.say("Let's play a game. I am going to think of a number. You try to guess it, and I will tell you if you are correct. ")
+engine.runAndWait()
+time.sleep(1)
+finish = False
 while(1): 
     data = conn.recv(1024)
     if not data: break
@@ -54,6 +59,7 @@ while(1):
                         engine.say(MyText + " is a good guess. Try something lower. ")
                     else: 
                         engine.say(MyText + " is correct. Way to go. ")
+                        finish = True
                     engine.runAndWait()
 
                     
@@ -66,3 +72,5 @@ while(1):
             print("unknown error occured")
         
         conn.sendall(tosend)
+        if(finish): 
+            playsound('macarena.wav')
